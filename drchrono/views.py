@@ -73,3 +73,6 @@ class CheckinView(TemplateView):
 
 class DashboardView(TemplateView):
     template_name = 'dashboard.html'
+
+class AnalyticsView(TemplateView):
+    template_name = 'analytics.html'

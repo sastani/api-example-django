@@ -10,8 +10,9 @@ import views
 urlpatterns = [
     url(r'^setup/$', views.SetupView.as_view(), name='setup'),
     url(r'^welcome/$', views.DoctorWelcome.as_view(), name='setup'),
-    url(r'^dashboard/$', views.Dashboard.as_view(), name='dashboard'),
+    url(r'^dashboard/$', views.DashboardView.as_view(), name='dashboard'),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^analytics/$', views.AnalyticsView.as_view(), name='analytics'),
     url(r'', include('social.apps.django_app.urls', namespace='social')),
     url(r'^checkin/$', views.CheckinView.as_view(), name='checkin')
 
