@@ -71,3 +71,5 @@ class DoctorWelcome(TemplateView):
 class CheckinView(TemplateView):
     template_name = 'checkin.html'
 
+class DashboardView(TemplateView):
+    template_name = 'dashboard.html'
