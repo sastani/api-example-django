@@ -12,4 +12,6 @@ urlpatterns = [
     url(r'^welcome/$', views.DoctorWelcome.as_view(), name='setup'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('social.apps.django_app.urls', namespace='social')),
+    url(r'^checkin/$', views.CheckinView.as_view(), name='checkin')
+
 ]

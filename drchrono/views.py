@@ -1,22 +1,22 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.views.generic import TemplateView
 from social_django.models import UserSocialAuth
-
-from drchrono.endpoints import DoctorEndpoint
-
+from .models import *
+from drchrono.endpoints import DoctorEndpoint, AppointmentEndpoint,PatientEndpoint, APIException
+from .forms import *
 
 class SetupView(TemplateView):
     """
     The beginning of the OAuth sign-in flow. Logs a user into the kiosk, and saves the token.
     """
-    template_name = 'kiosk_setup.html'
+    template_name = 'doc_login.html'
 
 
 class DoctorWelcome(TemplateView):
     """
     The doctor can see what appointments they have today.
     """
-    template_name = 'doctor_welcome.html'
+    template_name = 'doc_welcome.html'
 
     def get_token(self):
         """
@@ -26,6 +26,27 @@ class DoctorWelcome(TemplateView):
         oauth_provider = UserSocialAuth.objects.get(provider='drchrono')
         access_token = oauth_provider.extra_data['access_token']
         return access_token
+
+    def make_api_request(self):
+        """
+        Use the token we have stored in the DB to make an API request and get
+        doctor details. If this succeeds, we've proved that the OAuth setup is working
+        """
+        # We can create an instance of an endpoint resource class, and use it to fetch details
+        access_token = self.get_token()
+        self.request.session['access_token'] = access_token
+
+        doctor_api = DoctorEndpoint(access_token)
+        patient_api = PatientEndpoint(access_token)
+        apppointment_api = AppointmentEndpoint(access_token)
+
+        # Grab the first doctor from the list; normally this would be the whole
+        # practice group, but your hackathon account probably only has one doctor in it.
+        doctor = doctor_api.get_and_store_data()
+        self.request.session['doctor'] = doctor.id
+        # Get patients and appointments for the doctor and store it in the local DB
+
+        return doctor
 
     def make_api_request(self):
         """
@@ -46,4 +67,7 @@ class DoctorWelcome(TemplateView):
         doctor_details = self.make_api_request()
         kwargs['doctor'] = doctor_details
         return kwargs
+
+class CheckinView(TemplateView):
+    template_name = 'checkin.html'
 
