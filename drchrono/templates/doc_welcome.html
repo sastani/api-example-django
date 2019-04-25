@@ -1,0 +1,18 @@
+{% extends "./base.html" %}
+{% block title %}Welcome to drchrono{% endblock %}
+{% block body %}
+
+<h1>Hello, Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h1>
+<br>
+<div style="text-align: center;"><h3>What would you like to do?</h3></div>
+
+<a href="{% url 'checkin' %}" class="btn btn-success btn-block btn-xl">
+    Doctor Dashboard
+</a>
+<a href="{% url 'checkin' %}" class="btn btn-success btn-block btn-xl">
+    Patient CheckIn
+</a>
+<a href="{% url 'checkin' %}" class="btn btn-success btn-block btn-xl">
+    Analytics
+</a>
+{% endblock body %}

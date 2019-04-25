@@ -1,0 +1,10 @@
+{% extends "./base.html" %}
+{% block body %}
+<div class="container">
+    <h2 style="text-align:center">Welcome to CheckMeIn!</h2>
+    <a href="{% url 'social:begin' 'drchrono' %}" class="btn btn-primary btn-lg btn-block">Login to your dashboard using drchrono
+    </a>
+</div>
+{% endblock body %}
+</body>
+</html>
