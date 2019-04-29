@@ -1,6 +1,6 @@
 import requests
 import logging
-
+from models import Doctor
 
 class APIException(Exception): pass
 
@@ -25,17 +25,13 @@ ERROR_CODES = {
 class BaseEndpoint(object):
     """
     A python wrapper for the basic rules of the drchrono API endpoints.
-
     Provides consistent, pythonic usage and return values from the API.
-
     Abstracts away:
      - base URL,
      - details of authentication
      - list iteration
      - response codes
-
     All return values will be dicts, or lists of dicts.
-
     Subclasses should implement a specific endpoint.
     """
     BASE_URL = 'https://drchrono.com/api/'
@@ -60,7 +56,6 @@ class BaseEndpoint(object):
     def _auth_headers(self, kwargs):
         """
         Adds auth information to the kwargs['header'], as expected by get/put/post/delete
-
         Modifies kwargs in place. Returns None.
         """
         kwargs['headers'] = kwargs.get('headers', {})
@@ -122,9 +117,7 @@ class BaseEndpoint(object):
     def create(self, data=None, json=None, **kwargs):
         """
         Used to create an object at a resource with the included values.
-
         Response body will be the requested object, with the ID it was assigned.
-
         Success: 201 (Created)
         Failure:
            - 400 (Bad Request)
@@ -139,13 +132,9 @@ class BaseEndpoint(object):
     def update(self, id, data, partial=True, **kwargs):
         """
         Updates an object. Returns None.
-
         When partial=False, uses PUT to update the entire object at the given ID with the given values.
-
         When partial=TRUE [the default] uses PATCH to update only the given fields on the object.
-
         Response body will be empty.
-
         Success: 204 (No Content)
         Failure:
            - 400 (Bad Request)
@@ -163,9 +152,7 @@ class BaseEndpoint(object):
     def delete(self, id, **kwargs):
         """
         Deletes the object at this resource with the given ID.
-
         Response body will be empty.
-
         Success: 204 (No Content)
         Failure:
            - 400 (Bad Request)
@@ -179,6 +166,24 @@ class BaseEndpoint(object):
 
 class PatientEndpoint(BaseEndpoint):
     endpoint = "patients"
+
+    def list(self, params=None, doctor=None, **kwargs):
+        """
+        List patients associated with doctor
+        """
+        # Just parameter parsing & checking
+        params = params or {}
+        if doctor:
+            params['doctor'] = doctor
+        if 'doctor' not in params:
+            raise Exception("Must provide doctor id")
+        return super(PatientEndpoint, self).list(params, **kwargs)
+
+    '''
+        Get patients for a given doctor
+    '''
+    def get_patients(self, doctor):
+        return
 
 
 class AppointmentEndpoint(BaseEndpoint):
@@ -204,6 +209,21 @@ class AppointmentEndpoint(BaseEndpoint):
 class DoctorEndpoint(BaseEndpoint):
     endpoint = "doctors"
 
+    def get_doctor(self):
+        #get first doctor from api as JSON object
+        doctor_fields  = next(self.list())
+        id = doctor_fields['id']
+        first_name = doctor_fields['first_name']
+        last_name = doctor_fields['last_name']
+        #update or create doctor model in db
+        doctor, created = Doctor.objects.update_or_create(pk=id,
+            defaults={
+                'first_name': first_name,
+                'last_name': last_name
+            })
+        return doctor
+
+
     def update(self, id, data, partial=True, **kwargs):
         raise NotImplementedError("the API does not allow updating doctors")
 
@@ -214,5 +234,10 @@ class DoctorEndpoint(BaseEndpoint):
         raise NotImplementedError("the API does not allow deleteing doctors")
 
 
+
+
 class AppointmentProfileEndpoint(BaseEndpoint):
     endpoint = "appointment_profiles"
+
+
+

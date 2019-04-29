@@ -1,27 +1,30 @@
 from django.shortcuts import redirect, render
 from django.views.generic import TemplateView
 from social_django.models import UserSocialAuth
+from django.http import JsonResponse
 from .models import *
 from drchrono.endpoints import DoctorEndpoint, AppointmentEndpoint,PatientEndpoint, APIException
 from .forms import *
+import datetime
+import pytz
 
 class SetupView(TemplateView):
     """
     The beginning of the OAuth sign-in flow. Logs a user into the kiosk, and saves the token.
     """
-    template_name = 'doc_login.html'
+    template_name = 'login.html'
 
 
 class DoctorWelcome(TemplateView):
     """
     The doctor can see what appointments they have today.
     """
-    template_name = 'doc_welcome.html'
+    template_name = 'welcome.html'
 
     def get_token(self):
         """
-        Social Auth module is configured to store our access tokens. This dark magic will fetch it for us if we've
-        already signed in.
+        Social Auth module is configured to store our access tokens. This dark
+        magic will fetch it for us if we've already signed in.
         """
         oauth_provider = UserSocialAuth.objects.get(provider='drchrono')
         access_token = oauth_provider.extra_data['access_token']
@@ -37,28 +40,14 @@ class DoctorWelcome(TemplateView):
         self.request.session['access_token'] = access_token
 
         doctor_api = DoctorEndpoint(access_token)
-        patient_api = PatientEndpoint(access_token)
-        apppointment_api = AppointmentEndpoint(access_token)
 
         # Grab the first doctor from the list; normally this would be the whole
         # practice group, but your hackathon account probably only has one doctor in it.
-        doctor = doctor_api.get_and_store_data()
+        doctor = doctor_api.get_doctor()
         self.request.session['doctor'] = doctor.id
         # Get patients and appointments for the doctor and store it in the local DB
 
         return doctor
-
-    def make_api_request(self):
-        """
-        Use the token we have stored in the DB to make an API request and get doctor details. If this succeeds, we've
-        proved that the OAuth setup is working
-        """
-        # We can create an instance of an endpoint resource class, and use it to fetch details
-        access_token = self.get_token()
-        api = DoctorEndpoint(access_token)
-        # Grab the first doctor from the list; normally this would be the whole practice group, but your hackathon
-        # account probably only has one doctor in it.
-        return next(api.list())
 
     def get_context_data(self, **kwargs):
         kwargs = super(DoctorWelcome, self).get_context_data(**kwargs)
@@ -76,3 +65,5 @@ class DashboardView(TemplateView):
 
 class AnalyticsView(TemplateView):
     template_name = 'analytics.html'
+
+
