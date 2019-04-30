@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.dates import MONTHS
 from datetime import datetime
 # Add your models here
 
@@ -54,6 +55,44 @@ class Appointment(models.Model):
     appt_time = models.DateTimeField()
     status = models.CharField(max_length=20)
     checked_in = models.BooleanField(null=False)
+    check_in_time = models.TimeField()
+    appt_start_time = models.TimeField()
+    appt_end_time = models.TimeField()
+
+    def calc_wait_time(self):
+        if self.checked_in:
+            delta = self.appt_start_time - self.check_in_time
+            mins = int(delta.total_secs/60)
+            return mins
+        else:
+            return None
+
+class Stats(models.Model):
+    total_wait_time = models.TimeField()
+    num_appts = models.IntegerField()
+
+    def calc_avg_wait(self):
+        avg = (self.total_wait_time.total_secs / self.num_appts)
+        avg = int(avg / 60)
+        return avg
+
+    class Meta:
+        abstract = True
+
+class DailyStats(Stats):
+    date = models.DateField(null=False)
+
+
+class MonthlyStats(Stats):
+    month = models.IntegerField(choices=MONTHS.items(), null=False)
+
+    def get_month(self):
+        return MONTHS.get(self.month)
+
+
+
+
+
 
 
 
