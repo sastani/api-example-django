@@ -28,7 +28,7 @@ class Patient(models.Model):
                       ('O', 'Other'))
     #gender will be represented by 1 char
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-    date_of_birth = models.DateField(editable=False, null=True)
+    dob = models.DateField(editable=False, null=True)
 
     address = models.CharField(max_length=200, null=True)
     city = models.CharField(max_length=50, null=True)
@@ -36,7 +36,7 @@ class Patient(models.Model):
     zip_code = models.CharField(max_length=5, null=True)
     cell_phone = models.CharField(max_length=12, null=True)
     #stores path to patients photo on filesystem in db
-    patient_pic = models.ImageField(upload_to='/photos', null=True)
+    patient_pic = models.ImageField(upload_to='photos', null=True)
 
     def __str__(self):
         return '[{},{} - {}, {}, {}]'.format(
@@ -50,19 +50,28 @@ class Patient(models.Model):
 class Appointment(models.Model):
     id = models.IntegerField(primary_key=True)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, null=True)
     duration = models.IntegerField()
     appt_time = models.DateTimeField()
-    status = models.CharField(max_length=20)
-    checked_in = models.BooleanField(null=False)
-    check_in_time = models.TimeField()
-    appt_start_time = models.TimeField()
-    appt_end_time = models.TimeField()
+    exam_room = models.IntegerField()
+    status = models.CharField(max_length=20, null=False, default="")
+    reason = models.CharField(max_length=255, null=False, default="")
+    checked_in = models.BooleanField(null=False, default=False)
+    check_in_time = models.TimeField(null=True)
+    appt_start_time = models.TimeField(null=True)
+    appt_end_time = models.TimeField(null=True)
+
+    @staticmethod
+    def patient_checked_in(status):
+        if (status in ("Checked In", "In Room", "Complete", "In Session")):
+            return True
+        else:
+            return False
 
     def calc_wait_time(self):
         if self.checked_in:
             delta = self.appt_start_time - self.check_in_time
-            mins = int(delta.total_secs/60)
+            mins = int(delta.total_secs / 60)
             return mins
         else:
             return None
@@ -70,6 +79,8 @@ class Appointment(models.Model):
 class Stats(models.Model):
     total_wait_time = models.TimeField()
     num_appts = models.IntegerField()
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+
 
     def calc_avg_wait(self):
         avg = (self.total_wait_time.total_secs / self.num_appts)
@@ -80,11 +91,11 @@ class Stats(models.Model):
         abstract = True
 
 class DailyStats(Stats):
-    date = models.DateField(null=False)
+    date = models.DateField(primary_key=True, null=False)
 
 
 class MonthlyStats(Stats):
-    month = models.IntegerField(choices=MONTHS.items(), null=False)
+    month = models.IntegerField(primary_key=True, choices=MONTHS.items(), null=False)
 
     def get_month(self):
         return MONTHS.get(self.month)

@@ -1,6 +1,7 @@
 import requests
 import logging
-from models import Doctor
+from models import Doctor, Patient, Appointment
+from datetime import datetime
 
 class APIException(Exception): pass
 
@@ -183,7 +184,24 @@ class PatientEndpoint(BaseEndpoint):
         Get patients for a given doctor
     '''
     def get_patients(self, doctor):
-        return
+        patients = self.list(doctor=doctor.id)
+        for p in patients:
+            patient_fields = {
+                'doctor': doctor,
+                'first_name': p['first_name'],
+                'last_name': p['last_name'],
+                'ssn': p['social_security_number'],
+                'email': p['email'],
+                'gender': p['gender'],
+                'dob': p['date_of_birth'],
+                'address': p['address'],
+                'city': p['city'],
+                'state': p['state'],
+                'zip_code': p['zip_code'],
+                'cell_phone': p['cell_phone'],
+                'patient_pic': p['patient_photo']
+            }
+            updated_patient, created = Patient.objects.update_or_create(defaults=patient_fields, pk=p['id'])
 
 
 class AppointmentEndpoint(BaseEndpoint):
@@ -205,13 +223,46 @@ class AppointmentEndpoint(BaseEndpoint):
             raise Exception("Must provide either start & end, or date argument")
         return super(AppointmentEndpoint, self).list(params, **kwargs)
 
+    def get_appoinments(self, doctor, date):
+        #check if a specific date was passed
+        if not date:
+            date = datetime.now().strftime('%Y-%m-%d')
+        #check if a specific doctor was passed
+        if not doctor:
+            doctor = Doctor.objects.first()
+            d = {}
+        else:
+            d = {'doctor': doctor.id}
+        appointments = self.list(params=d, date=date)
+
+        for appt in appointments:
+            status = appt['status']
+            if not status:
+                status = ""
+            checked_in = Appointment.patient_checked_in(status)
+            try:
+                patient = Patient.objects.get(id=appt['patient'])
+            except Patient.DoesNotExist:
+                patient = None
+            appt_fields = {
+                'patient': patient,
+                'doctor': doctor,
+                'exam_room': appt['exam_room'],
+                'duration': appt['duration'],
+                'appt_time': appt['scheduled_time'],
+                'status': status,
+                'checked_in': checked_in,
+                'reason': appt['reason']
+            }
+            updated_appt, created = Appointment.objects.update_or_create(defaults=appt_fields, pk=appt['id'])
+
 
 class DoctorEndpoint(BaseEndpoint):
     endpoint = "doctors"
 
     def get_doctor(self):
         #get first doctor from api as JSON object
-        doctor_fields  = next(self.list())
+        doctor_fields = next(self.list())
         id = doctor_fields['id']
         first_name = doctor_fields['first_name']
         last_name = doctor_fields['last_name']
