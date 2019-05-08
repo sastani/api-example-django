@@ -47,6 +47,30 @@ class Patient(models.Model):
             self.gender
         )
 
+class AppointmentQuerySet(models.QuerySet):
+    todays_date = datetime.now()
+    day = todays_date.day
+    month = todays_date.month
+    year = todays_date.year
+
+
+    def today(self):
+        return self.filter(appt_time__year=self.year,
+                           appt_time__month=self.month,
+                           appt_time__day=self.day).order_by('appt_time')
+
+    def future(self):
+        return None
+
+class AppointmentManager(models.Manager):
+
+    def get_queryset(self):
+        return AppointmentQuerySet(self.model, using=self._db)
+
+    def get_today(self):
+        return self.get_queryset().today()
+
+
 class Appointment(models.Model):
     id = models.IntegerField(primary_key=True)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
@@ -60,6 +84,7 @@ class Appointment(models.Model):
     check_in_time = models.TimeField(null=True)
     appt_start_time = models.TimeField(null=True)
     appt_end_time = models.TimeField(null=True)
+    objects = AppointmentManager()
 
     @staticmethod
     def patient_checked_in(status):

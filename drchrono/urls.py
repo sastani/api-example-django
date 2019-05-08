@@ -14,6 +14,6 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^analytics/$', views.AnalyticsView.as_view(), name='analytics'),
     url(r'', include('social.apps.django_app.urls', namespace='social')),
-    url(r'^checkin/$', views.CheckinView.as_view(), name='checkin')
-
+    url(r'^checkin/$', views.CheckinView.as_view(), name='checkin'),
+    url(r'^demographics/$', views.DemographicsView.as_view(), name='demographics')
 ]

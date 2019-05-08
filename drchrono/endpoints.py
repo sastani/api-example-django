@@ -1,7 +1,7 @@
 import requests
 import logging
 from models import Doctor, Patient, Appointment
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class APIException(Exception): pass
 
@@ -223,17 +223,25 @@ class AppointmentEndpoint(BaseEndpoint):
             raise Exception("Must provide either start & end, or date argument")
         return super(AppointmentEndpoint, self).list(params, **kwargs)
 
+    #get todays appointments
     def get_appoinments(self, doctor, date):
-        #check if a specific date was passed
-        if not date:
-            date = datetime.now().strftime('%Y-%m-%d')
+
         #check if a specific doctor was passed
         if not doctor:
             doctor = Doctor.objects.first()
             d = {}
         else:
             d = {'doctor': doctor.id}
-        appointments = self.list(params=d, date=date)
+        #check if a specific date was passed
+        #if no date passed, get all appointments for next 30 days
+        if not date:
+            date = datetime.now()
+            month_later = date + timedelta(days=30)
+            date = date.strftime('%Y-%m-%d')
+            month_later = month_later.strftime('%Y-%m-%d')
+            appointments = self.list(params=d, start=date, end=month_later)
+        else:
+            appointments = self.list(params=d, date=date)
 
         for appt in appointments:
             status = appt['status']

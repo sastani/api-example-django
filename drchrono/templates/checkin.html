@@ -1,7 +1,20 @@
 {% extends "./base.html" %}
 {% block title %}Check In{% endblock %}
+{% load widget_tweaks %}
 {% block body %}
 <div class="container">
     <h2 style="text-align:center">Check yourself in!</h2>
+
+    <form action="{% url 'checkin' %}" method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {% render_field field class="form-control" placeholder=field.help_text %}
+        </div>
+        {% endfor %}
+         <button type="submit" class="btn btn-success">Check In</button>
+    </form>
 </div>
 {% endblock body %}

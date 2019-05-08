@@ -5,16 +5,19 @@
     <h2 style="text-align:center">Dashboard</h2>
      <br>
      <br>
-		<a href="{% url 'analytics' %}" class="btn btn-success btn-block btn-xl">
+		<a href="{% url 'setup' %}" class="btn btn-success btn-block btn-sm">
+		Home
+		</a>
+		<a href="{% url 'analytics' %}" class="btn btn-success btn-block btn-sm">
 		Analytics
 		</a>
 		<h1>Today's Appointments</h1>
 		<div class="patients">
 		{% for a in appointments %}
-		<li class="patient">
 			<div class="row">
 				<div class="col col-8">
-					{{a.patient_name}} | {{a.appointment_time}} | Duration: {{a.duration}} minutes |
+                    <img src="{{a.patient.patient_pic}}" style="width:200px; height:300px">
+					{{a.patient.first_name}} {{a.patient.last_name}} | {{a.appt_time}} | Duration: {{a.duration}} minutes |
 					{% if a.status == "" %}
 					Status: Not Arrived
 					{% else %}
