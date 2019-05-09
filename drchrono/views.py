@@ -71,8 +71,6 @@ class CheckinView(FormView):
         first_name = form.cleaned_data.get('first_name')
         last_name = form.cleaned_data.get('last_name')
         ssn = form.cleaned_data.get('ssn')
-        print(first_name)
-        print(ssn)
 
         try:
             patient = Patient.objects.get(first_name=first_name,last_name=last_name,ssn=str(ssn))
@@ -82,17 +80,13 @@ class CheckinView(FormView):
             access_token = self.request.session['access_token']
             a = AppointmentEndpoint(access_token)
             appts = Appointment.objects.get_today().filter(patient=patient.id).filter(checked_in=False)
-            print(appts)
             time = datetime.datetime.now().strftime('%H:%M:%S')
             for appt in appts:
-                print(appt)
                 updated_fields = {
                     'status': 'Checked In',
                     'checked_in': True,
                     'check_in_time': time
                 }
-                print(appt.patient)
-                print(appt.appt_time)
 
                 data = {
                     'status': 'Checked In',
@@ -211,7 +205,6 @@ class DemographicsView(FormView):
             patient = Patient.objects.get(pk=patient_id)
         except Patient.DoesNotExist:
             patient = None
-        print(patient)
 
         if patient:
             access_token = self.request.session.get('access_token')
