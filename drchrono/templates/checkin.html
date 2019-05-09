@@ -9,6 +9,8 @@
         {% csrf_token %}
 
         {% for field in form %}
+        <strong style="color:#FE0101; font-size:20px">{{ field.errors.as_text }}</strong>
+
         <div class="form-group">
             {{ field.label_tag }}
             {% render_field field class="form-control" placeholder=field.help_text %}

@@ -119,11 +119,14 @@ STATIC_URL = '/static/'
 # 3.2) change your hostname if you're using a different way to access this kiosk; by default it'll run on localhost:8080
 # 4) copy your CLIENT_ID and SECRET keys into a file docker/environment. See the example
 # 5) Ask a dev if this doesn't work quickly; these settings can be fiddly, and we'd rather not wast time with them.
-
+'''
 SOCIAL_AUTH_DRCHRONO_KEY = os.getenv('SOCIAL_AUTH_CLIENT_ID')
 SOCIAL_AUTH_DRCHRONO_SECRET = os.getenv('SOCIAL_AUTH_SECRET')
+'''
+SOCIAL_AUTH_DRCHRONO_KEY = 'Qbo9eJ1lvJSBfCIdSjmyX8mYxFQHbQ3Kj0bjY2Rd'
+SOCIAL_AUTH_DRCHRONO_SECRET = 'uwtyrC568LHIRLgN2XLaWPIL5FzcgkPwySkPZoybyXI8J36QQREkw2UkUdOc4bJsWovS7pva5FxB99XL73edhU9AGdCN2DURMKEOWi0QcH3pZA36JvAdbaZ5ltQWZaXK'
 
-
+#LOGIN_REDIRECT_URL = "/complete/drchrono/"
 LOGIN_REDIRECT_URL = '/welcome/'
 LOGIN_URL = 'login/drchrono'
 MEDIA_URL = '/media/'

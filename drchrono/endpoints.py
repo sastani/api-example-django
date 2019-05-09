@@ -144,6 +144,7 @@ class BaseEndpoint(object):
         """
         url = self._url(id)
         self._auth_headers(kwargs)
+
         if partial:
             response = requests.patch(url, data, **kwargs)
         else:
@@ -263,6 +264,7 @@ class AppointmentEndpoint(BaseEndpoint):
                 'reason': appt['reason']
             }
             updated_appt, created = Appointment.objects.update_or_create(defaults=appt_fields, pk=appt['id'])
+
 
 
 class DoctorEndpoint(BaseEndpoint):

@@ -1,19 +1,14 @@
 {% extends "./base.html" %}
-{% load staticfiles %}
 {% load widget_tweaks %}
-{% csrf_token %}
-{% block title %}Welcome to drchrono{% endblock %}
 {% block body %}
-<div id="content" class="container mt-5">
-    {% if message %}
-    <div class="mt-4 alert alert-danger">
-        {{ message }}
-    </div>
-    {% endif %}
-    <form action="{% url 'demographics' %}" method="post" class="mb-5">
-       {% csrf_token %}
+<div class="container">
+    <h2 style="text-align:center">Update your info!</h2>
 
+    <form action="{% url 'demographics' %}" method="post">
+       {% csrf_token %}
         {% for field in form %}
+        <strong style="color:#FE0101; font-size:20px">{{ field.errors.as_text }}</strong>
+
         <div class="form-group">
             {{ field.label_tag }}
             {% render_field field class="form-control" placeholder=field.help_text %}

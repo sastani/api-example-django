@@ -1,9 +1,10 @@
 {% extends "./base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block body %}
+{% csrf_token %}
+
 <div class="container">
     <h2 style="text-align:center">Dashboard</h2>
-     <br>
      <br>
 		<a href="{% url 'setup' %}" class="btn btn-success btn-block btn-sm">
 		Home
@@ -11,22 +12,82 @@
 		<a href="{% url 'analytics' %}" class="btn btn-success btn-block btn-sm">
 		Analytics
 		</a>
-		<h1>Today's Appointments</h1>
-		<div class="patients">
+		<br>
+		<br>
+		<div class="card">
+	    <div class="card-header"><h2>Today's Appointments</h2></div>
+		<table class="table" id="appointments">
+			<thead class="thead-dark">
+            <tr>
+				<th scope="col"></th>
+				<th scope="col">Patient</th>
+                <th scope="col">Appointment Time</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Status</th>
+				<th scope="col"></th>
+
+            </tr>
+			</thead>
 		{% for a in appointments %}
+			<tr>
 			<div class="row">
-				<div class="col col-8">
-                    <img src="{{a.patient.patient_pic}}" style="width:200px; height:300px">
-					{{a.patient.first_name}} {{a.patient.last_name}} | {{a.appt_time}} | Duration: {{a.duration}} minutes |
-					{% if a.status == "" %}
-					Status: Not Arrived
+                    <td><img src="{{a.patient.patient_pic}}" style="width:200px; height:300px"></td>
+					<td>{{a.patient.first_name}} {{a.patient.last_name}}</td>
+					<td>{{a.appt_time}}</td>
+					<td>{{a.duration}} minutes</td>
+					<td>{% if a.status == "" %}
+					Not Arrived
 					{% else %}
-					Status: {{a.status}}
-					{% endif %}
-                </div>
+					{{a.status}}
+						{% endif %}</td>
+					<td>
+						<div class="dropdown">
+						<button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+								aria-expanded="false">Change Status</button>
+						<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+						<button onclick="status_update('In Session', {{a.id}});" class="dropdown-item">In Session</button>
+						<button onclick="status_update('Complete', {{a.id}});" class="dropdown-item">Complete</button>
+						<button onclick="status_update('Cancelled', {{a.id}});" class="dropdown-item">Cancelled</button>
+					  </div>
+						</div>
+					</td>
+			</div></tr>{% endfor %}
+		</table>
 			</div>
-		</li>
-		{% endfor %}
-		</div>
 </div>
+{% block script %}
+<script>
+    var token = '{{csrf_token}}';
+
+	function status_update(status, id) {
+		$.ajax({
+			type: "POST",
+			headers: { "X-CSRFToken": token },
+        	url: "{% url 'dashboard' %}",
+        	dataType: "json",
+        	contentType: "application/json;",
+        	data: JSON.stringify({'id': id, 'status': status}),
+        	success: function() {
+        		$.ajax({
+					type: "POST",
+					headers: { "X-CSRFToken": token },
+        			url: "{% url 'dashboard' %}",
+					dataType: "json",
+					contentType: "application/json;",
+        			data: JSON.stringify({'id': id, 'status': status})
+    			});
+    			get_appointments();
+        	}
+    	});
+	}
+
+	function get_appointments() {
+        $.ajax({
+            type: "GET",
+            headers: { "X-CSRFToken": token },
+            url: "{% url 'dashboard' %}"
+        });
+    }
+</script>
+{% endblock script %}
 {% endblock body %}

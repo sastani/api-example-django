@@ -32,12 +32,6 @@ class CheckinForm(forms.Form):
 
 class DemographicsForm(forms.Form):
 
-    date_of_birth = forms.DateField(
-        required=False,
-        error_messages={
-            'invalid': 'Date must be in the format: YYYY-MM-DD'
-        }
-    )
     GENDER_CHOICES = (
         ('Male', 'Male'),
         ('Female', 'Female'),

@@ -9,6 +9,7 @@ from drchrono.endpoints import DoctorEndpoint, AppointmentEndpoint,PatientEndpoi
 from .forms import *
 import datetime
 import pytz
+import json
 
 class SetupView(TemplateView):
     """
@@ -66,10 +67,12 @@ class CheckinView(FormView):
     form_class = CheckinForm
     success_url = '/demographics/'
 
-    def validate_form(self, form):
+    def form_valid(self, form):
         first_name = form.cleaned_data.get('first_name')
         last_name = form.cleaned_data.get('last_name')
         ssn = form.cleaned_data.get('ssn')
+        print(first_name)
+        print(ssn)
 
         try:
             patient = Patient.objects.get(first_name=first_name,last_name=last_name,ssn=str(ssn))
@@ -78,38 +81,44 @@ class CheckinView(FormView):
         if patient:
             access_token = self.request.session['access_token']
             a = AppointmentEndpoint(access_token)
-            appts = Appointment.today.filter(patient=patient.id)
-            date = datetime.now().isoformat()
+            appts = Appointment.objects.get_today().filter(patient=patient.id).filter(checked_in=False)
+            print(appts)
+            time = datetime.datetime.now().strftime('%H:%M:%S')
             for appt in appts:
+                print(appt)
                 updated_fields = {
                     'status': 'Checked In',
                     'checked_in': True,
-                    'check_in_time': date
+                    'check_in_time': time
                 }
+                print(appt.patient)
+                print(appt.appt_time)
 
                 data = {
                     'status': 'Checked In',
-                    'updated_at': date
+                    'updated_at': time
                 }
                 response = {}
                 try:
                     response = a.update(appt.id, data)
                     updated_appt, created = Appointment.objects.update_or_create(updated_fields, pk=appt.id)
                     self.request.session['checkedin_patient'] = patient.id
-                    return super(CheckinView, self).validate_form(form)
+                    return super(CheckinView, self).form_valid(form)
                 except APIException:
                     context = {
-                        'form': form
+                        'form': form,
+                        'message': 'Trouble checking in!'
                     }
                     return render(self.request, "checkin.html", context)
-
             context = {
-                'form': form
+                'form': form,
+                'message': 'Trouble checking in!'
+
             }
             return render(self.request, "checkin.html", context)
-
         context = {
-            'form': form
+            'form': form,
+            'message': 'Trouble checking in!'
         }
         return render(self.request, "checkin.html", context)
 
@@ -129,21 +138,62 @@ class DashboardView(TemplateView):
         kwargs['appointments'] = appts
         return kwargs
 
-class DemographicsView(TemplateView):
+    def get(self, request):
+        access_token = self.request.session.get('access_token')
+        a = AppointmentEndpoint(access_token)
+        if request.method == 'GET':
+            appts = Appointment.objects.get_today()
+            data = appts
+
+            if data == None:
+                return JsonResponse({"data": None})
+            context = {
+                'appointments': data,
+            }
+        return render(request, 'dashboard.html', context)
+
+
+    def post(self, request):
+        access_token = self.request.session.get('access_token')
+        a = AppointmentEndpoint(access_token)
+
+        if request.method == 'POST':
+            request_data = json.loads(request.body)
+            appointment_id = request_data.get("id")
+            status = request_data.get("status")
+            data = {
+                'status': status
+            }
+            try:
+                resp = a.update(appointment_id, data)
+                appt = Appointment.objects.get(pk=appointment_id)
+                appt.status = status
+                # setup arrival time in database if patient has arrived
+                if status == 'Complete' and appt.appt_end_time is None:
+                    appt.appt_end_time = datetime.datetime.now().strftime('%H:%M:%S')
+                if status == 'Arrived' and appt.check_in_time is None:
+                    appt.check_in_time = datetime.datetime.now().strftime('%H:%M:%S')
+                if status == 'In Session' and appt.appt_start_time is None:
+                    appt.appt_start_time = datetime.datetime.now().strftime('%H:%M:%S')
+                appt.save()
+            except APIException:
+                return JsonResponse({"status": "false"}, status=500)
+        return JsonResponse({"status": "true"})
+
+
+class DemographicsView(FormView):
     template_name = 'update_demographic_info.html'
     form_class = DemographicsForm
-    success_url = '/checkin_success/'
+    success_url = '/welcome'
 
     def get_initial(self):
         initial = {}
         patient_id = self.request.session.get('checkedin_patient')
-
-        patient = Patient.objects.filter(pk=patient_id).values()[0]
-        if patient:
-            initial = patient
+        patient = Patient.objects.filter(pk=patient_id).values()
+        initial = patient[0]
         return initial
 
-    def validate_form(self, form):
+    def form_valid(self, form):
 
         email = form.cleaned_data.get('email')
 
@@ -182,7 +232,7 @@ class DemographicsView(TemplateView):
             try:
                 response = p.update(patient_id, updated_fields)
                 updated_patient, created = Patient.objects.update_or_create(updated_fields, pk=patient_id)
-                return super(DemographicsView, self).validate_form(form)
+                return super(DemographicsView, self).form_valid(form)
             except APIException:
                 context = {
                     'form': form
