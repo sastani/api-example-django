@@ -4,7 +4,11 @@
 {% block body %}
 <div class="container">
     <h2 style="text-align:center">Check yourself in!</h2>
-
+        {% if message %}
+    <div class="mt-3 alert alert-danger">
+        {{ message }}
+    </div>
+    {% endif %}
     <form action="{% url 'checkin' %}" method="post">
         {% csrf_token %}
 
